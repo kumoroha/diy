@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自作PC構成シミュレーター</title>
+    <title>自作PC構成シミュレーター v2</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f9; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        .part-section { margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        label { font-weight: bold; width: 120px; }
-        select { flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-        .result-area { margin-top: 30px; padding: 20px; background: #eef; border-radius: 8px; }
-        #summary-list { list-style: none; padding: 0; }
-        #summary-list li { margin-bottom: 5px; }
-        .btn-copy { display: block; width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #1a1a1a; margin-bottom: 30px; border-bottom: 2px solid #007bff; display: inline-block; width: 100%; padding-bottom: 10px; }
+        .part-section { margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; background: #fafafa; padding: 12px 15px; border-radius: 8px; border: 1px solid #eee; }
+        label { font-weight: bold; width: 150px; font-size: 0.95em; }
+        select { flex-grow: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background-color: white; }
+        .result-area { margin-top: 35px; padding: 25px; background: #f8f9ff; border-radius: 10px; border-left: 5px solid #007bff; }
+        h3 { margin-top: 0; color: #007bff; }
+        #summary-list { list-style: none; padding: 0; margin-bottom: 20px; }
+        #summary-list li { padding: 8px 0; border-bottom: 1px dashed #d1d1d1; display: flex; justify-content: space-between; }
+        .spec-label { color: #666; font-size: 0.85em; margin-left: 10px; }
+        .btn-copy { display: block; width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-copy:hover { background: #0056b3; }
     </style>
 </head>
@@ -27,23 +29,60 @@
         </div>
 
     <div class="result-area">
-        <h3>現在の構成リスト</h3>
+        <h3>最終構成確認</h3>
         <ul id="summary-list"></ul>
         <button class="btn-copy" onclick="copyToClipboard()">構成をクリップボードにコピー</button>
     </div>
 </div>
 
 <script>
-    // パーツデータの定義
+    // パーツデータと指標数値
     const partsData = {
-        "CPU": ["Core i9-14900K", "Core i7-14700K", "Ryzen 9 7950X", "Ryzen 7 7800X3D", "選択なし"],
-        "CPUクーラー": ["360mm 水冷クーラー", "大型空冷クーラー", "付属クーラー", "選択なし"],
-        "マザーボード": ["Z790 (Intel)", "B760 (Intel)", "X670 (AMD)", "B650 (AMD)", "選択なし"],
-        "メモリ": ["DDR5 32GB (16GBx2)", "DDR5 64GB (32GBx2)", "DDR4 16GB (8GBx2)", "選択なし"],
-        "グラフィックボード": ["RTX 4090", "RTX 4080 Super", "RTX 4070 Ti Super", "RTX 4060", "Radeon RX 7900 XTX", "選択なし"],
-        "SSD": ["NVMe Gen4 1TB", "NVMe Gen4 2TB", "NVMe Gen3 500GB", "選択なし"],
-        "電源": ["1000W 80PLUS GOLD", "850W 80PLUS GOLD", "750W 80PLUS GOLD", "選択なし"],
-        "ケース": ["ミドルタワーケース", "フルタワーケース", "ミニタワーケース", "選択なし"]
+        "CPU": [
+            { name: "Core i9-14900K", spec: "24C/32T, 最大6.0GHz" },
+            { name: "Core i7-14700K", spec: "20C/28T, 最大5.6GHz" },
+            { name: "Ryzen 9 7950X", spec: "16C/32T, 最大5.7GHz" },
+            { name: "Ryzen 7 7800X3D", spec: "8C/16T, ゲーミング特化" },
+            { name: "選択なし", spec: "" }
+        ],
+        "グラボ": [
+            { name: "RTX 4090", spec: "24GB GDDR6X" },
+            { name: "RTX 4080 Super", spec: "16GB GDDR6X" },
+            { name: "RTX 4070 Ti Super", spec: "16GB GDDR6X" },
+            { name: "RTX 4060", spec: "8GB GDDR6" },
+            { name: "Radeon RX 7900 XTX", spec: "24GB GDDR6" },
+            { name: "選択なし", spec: "" }
+        ],
+        "メモリ": [
+            { name: "DDR5-6000 64GB", spec: "32GBx2" },
+            { name: "DDR5-5600 32GB", spec: "16GBx2" },
+            { name: "DDR4-3200 16GB", spec: "8GBx2" },
+            { name: "選択なし", spec: "" }
+        ],
+        "SSD": [
+            { name: "Gen4 NVMe 2TB", spec: "読込 7,000MB/s" },
+            { name: "Gen4 NVMe 1TB", spec: "読込 5,000MB/s" },
+            { name: "Gen3 NVMe 500GB", spec: "読込 3,500MB/s" },
+            { name: "選択なし", spec: "" }
+        ],
+        "HDD": [
+            { name: "8TB HDD", spec: "7200rpm, SATA" },
+            { name: "4TB HDD", spec: "5400rpm, SATA" },
+            { name: "2TB HDD", spec: "5400rpm, SATA" },
+            { name: "選択なし", spec: "" }
+        ],
+        "OS": [
+            { name: "Windows 11 Pro", spec: "64bit 日本語版" },
+            { name: "Windows 11 Home", spec: "64bit 日本語版" },
+            { name: "Linux (Ubuntu)", spec: "最新LTS" },
+            { name: "選択なし", spec: "" }
+        ],
+        "電源": [
+            { name: "1000W", spec: "80PLUS GOLD" },
+            { name: "850W", spec: "80PLUS GOLD" },
+            { name: "750W", spec: "80PLUS GOLD" },
+            { name: "選択なし", spec: "" }
+        ]
     };
 
     const container = document.getElementById('selector-container');
@@ -62,8 +101,9 @@
         
         partsData[category].forEach(item => {
             const option = document.createElement('option');
-            option.value = item;
-            option.text = item;
+            option.value = item.name;
+            // 選択肢に数値を表示
+            option.text = item.spec ? `${item.name} (${item.spec})` : item.name;
             select.appendChild(option);
         });
 
@@ -80,10 +120,12 @@
         let hasSelection = false;
 
         Object.keys(partsData).forEach(category => {
-            const val = document.getElementById(`select-${category}`).value;
-            if (val !== "選択なし") {
+            const selectedName = document.getElementById(`select-${category}`).value;
+            const categoryData = partsData[category].find(p => p.name === selectedName);
+
+            if (selectedName !== "選択なし") {
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${category}:</strong> ${val}`;
+                li.innerHTML = `<span><strong>${category}:</strong> ${selectedName}</span> <span class="spec-label">${categoryData.spec}</span>`;
                 summaryList.appendChild(li);
                 hasSelection = true;
             }
@@ -96,21 +138,25 @@
 
     // コピー機能
     function copyToClipboard() {
-        const text = Array.from(summaryList.querySelectorAll('li'))
-            .map(li => li.innerText)
-            .join('\n');
+        let text = "【PC構成リスト】\n";
+        const items = Array.from(summaryList.querySelectorAll('li'));
         
-        if (!text || text === "パーツを選択してください") {
-            alert("コピーする構成がありません。");
+        if (items.length === 0 || items[0].innerText === "パーツを選択してください") {
+            alert("構成が空です。");
             return;
         }
 
+        items.forEach(li => {
+            // 見栄え良く整形
+            const content = li.innerText.replace(/\n/g, " ");
+            text += `・${content}\n`;
+        });
+
         navigator.clipboard.writeText(text).then(() => {
-            alert("構成をコピーしました！SNSやメモに貼り付けられます。");
+            alert("構成リストをコピーしました！");
         });
     }
 
-    // 初期実行
     updateSummary();
 </script>
 
