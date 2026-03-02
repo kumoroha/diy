@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自作PC構成シミュレーター</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .part-section { margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        label { font-weight: bold; width: 120px; }
+        select { flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .result-area { margin-top: 30px; padding: 20px; background: #eef; border-radius: 8px; }
+        #summary-list { list-style: none; padding: 0; }
+        #summary-list li { margin-bottom: 5px; }
+        .btn-copy { display: block; width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .btn-copy:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>PC構成シミュレーター</h1>
+
+    <div id="selector-container">
+        </div>
+
+    <div class="result-area">
+        <h3>現在の構成リスト</h3>
+        <ul id="summary-list"></ul>
+        <button class="btn-copy" onclick="copyToClipboard()">構成をクリップボードにコピー</button>
+    </div>
+</div>
+
+<script>
+    // パーツデータの定義
+    const partsData = {
+        "CPU": ["Core i9-14900K", "Core i7-14700K", "Ryzen 9 7950X", "Ryzen 7 7800X3D", "選択なし"],
+        "CPUクーラー": ["360mm 水冷クーラー", "大型空冷クーラー", "付属クーラー", "選択なし"],
+        "マザーボード": ["Z790 (Intel)", "B760 (Intel)", "X670 (AMD)", "B650 (AMD)", "選択なし"],
+        "メモリ": ["DDR5 32GB (16GBx2)", "DDR5 64GB (32GBx2)", "DDR4 16GB (8GBx2)", "選択なし"],
+        "グラフィックボード": ["RTX 4090", "RTX 4080 Super", "RTX 4070 Ti Super", "RTX 4060", "Radeon RX 7900 XTX", "選択なし"],
+        "SSD": ["NVMe Gen4 1TB", "NVMe Gen4 2TB", "NVMe Gen3 500GB", "選択なし"],
+        "電源": ["1000W 80PLUS GOLD", "850W 80PLUS GOLD", "750W 80PLUS GOLD", "選択なし"],
+        "ケース": ["ミドルタワーケース", "フルタワーケース", "ミニタワーケース", "選択なし"]
+    };
+
+    const container = document.getElementById('selector-container');
+    const summaryList = document.getElementById('summary-list');
+
+    // セレクトボックスの生成
+    Object.keys(partsData).forEach(category => {
+        const div = document.createElement('div');
+        div.className = 'part-section';
+
+        const label = document.createElement('label');
+        label.innerText = category;
+
+        const select = document.createElement('select');
+        select.id = `select-${category}`;
+        
+        partsData[category].forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.text = item;
+            select.appendChild(option);
+        });
+
+        select.addEventListener('change', updateSummary);
+        
+        div.appendChild(label);
+        div.appendChild(select);
+        container.appendChild(div);
+    });
+
+    // 構成リストの更新
+    function updateSummary() {
+        summaryList.innerHTML = '';
+        let hasSelection = false;
+
+        Object.keys(partsData).forEach(category => {
+            const val = document.getElementById(`select-${category}`).value;
+            if (val !== "選択なし") {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${category}:</strong> ${val}`;
+                summaryList.appendChild(li);
+                hasSelection = true;
+            }
+        });
+
+        if (!hasSelection) {
+            summaryList.innerHTML = '<li>パーツを選択してください</li>';
+        }
+    }
+
+    // コピー機能
+    function copyToClipboard() {
+        const text = Array.from(summaryList.querySelectorAll('li'))
+            .map(li => li.innerText)
+            .join('\n');
+        
+        if (!text || text === "パーツを選択してください") {
+            alert("コピーする構成がありません。");
+            return;
+        }
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert("構成をコピーしました！SNSやメモに貼り付けられます。");
+        });
+    }
+
+    // 初期実行
+    updateSummary();
+</script>
+
+</body>
+</html>
